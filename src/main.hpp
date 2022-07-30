@@ -1,6 +1,0 @@
-#ifndef CO2_SENSOR_SCD4X_HPP
-#define CO2_SENSOR_SCD4X_HPP
-
-
-
-#endif
