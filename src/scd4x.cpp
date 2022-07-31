@@ -3,7 +3,7 @@
 SCD4x::SCD4x(i2c_inst_t *_i2c_num)
     : i2c_num(_i2c_num), i2c_address(SCD4X_DEFAULT_ADDR) {}
 
-SCD4x::SCD4x(i2c_inst_t *_i2c_num, uint16_t _i2c_address)
+SCD4x::SCD4x(i2c_inst_t *_i2c_num, uint8_t _i2c_address)
     : i2c_num(_i2c_num), i2c_address(_i2c_address) {}
 
 uint8_t SCD4x::generate_crc(const uint8_t *data, uint16_t count) {

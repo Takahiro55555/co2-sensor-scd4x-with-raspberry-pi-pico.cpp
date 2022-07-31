@@ -6,18 +6,18 @@
 #include <stdio.h>
 
 /* SCD4x default i2c address */
-const uint16_t SCD4X_DEFAULT_ADDR = 0x62;
+const uint8_t SCD4X_DEFAULT_ADDR = 0x62;
 
 class SCD4x {
 public:
   SCD4x(i2c_inst_t *_i2c_num);
-  SCD4x(i2c_inst_t *_i2c_num, uint16_t _i2c_address);
+  SCD4x(i2c_inst_t *_i2c_num, uint8_t _i2c_address);
   uint8_t generate_crc(const uint8_t *data, uint16_t count);
 
 private:
   /* SCD4x user settings */
   const i2c_inst_t *i2c_num;
-  const uint16_t i2c_address;
+  const uint8_t i2c_address;
 
   /* SCD4x commands */
   const uint16_t SCD4X_REINIT = 0x3646;
