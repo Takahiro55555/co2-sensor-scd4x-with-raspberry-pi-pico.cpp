@@ -39,7 +39,7 @@ private:
   const uint16_t SCD4X_GETASCE = 0x2313;
   const uint16_t SCD4X_SETASCE = 0x2416;
 
-  /* SCD4x checksum */
+  /* SCD4x checksum parameters */
   const uint8_t CRC8_POLYNOMIAL = 0x31;
   const uint8_t CRC8_INIT = 0xFF;
 };
