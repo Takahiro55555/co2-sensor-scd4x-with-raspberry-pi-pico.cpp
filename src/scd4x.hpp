@@ -9,14 +9,14 @@
 const uint8_t SCD4X_DEFAULT_ADDR = 0x62;
 
 class SCD4x {
-public:
-  SCD4x(i2c_inst_t *_i2c_num);
-  SCD4x(i2c_inst_t *_i2c_num, uint8_t _i2c_address);
-  uint8_t generate_crc(const uint8_t *data, uint16_t count);
+ public:
+  SCD4x(i2c_inst_t* _i2c_num);
+  SCD4x(i2c_inst_t* _i2c_num, uint8_t _i2c_address);
+  uint8_t generate_crc(const uint8_t* data, uint16_t count);
 
-private:
+ private:
   /* SCD4x user settings */
-  const i2c_inst_t *i2c_num;
+  const i2c_inst_t* i2c_num;
   const uint8_t i2c_address;
 
   /* SCD4x commands */
