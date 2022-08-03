@@ -14,10 +14,13 @@ int main()
   gpio_set_pulls(SDA_PIN, true, false);       // enable internal pull-up of SDA_PIN
   gpio_set_pulls(SCL_PIN, true, false);       // enable internal pull-up of SCL_PIN
 
+  sleep_ms(2000);
   SCD4x scd4x = SCD4x(i2c_num);
   while(1) {
-    sleep_ms(5000);
-    printf("%d [ppm], %f [C], %f [\%]\n", scd4x.co2(), scd4x.temperature(), scd4x.data_ready());
+    if(scd4x.update()) {
+      printf("%d [ppm], %f [C], %f [\%]\n\n", scd4x.co2(), scd4x.temperature(), scd4x.data_ready());
+    }
+    sleep_ms(5500);
   }
 
   return 0;

@@ -16,6 +16,7 @@ class SCD4x {
   float temperature();
   float relative_humidity();
   bool data_ready();
+  bool update();
 
  private:
   /* SCD4x user settings */
@@ -48,7 +49,7 @@ class SCD4x {
 
   /* Member variables */
   // uint8_t recv_buf[2] = {0, 0};
-  const uint I2C_DEFAULT_TIMEOUT_US = 600;
+  const uint I2C_DEFAULT_TIMEOUT_US = 6000;
   int _co2 = -1;
   float _temperature = 9999;
   float _relative_humidity = -1;

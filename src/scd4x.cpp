@@ -1,33 +1,37 @@
 #include "scd4x.hpp"
 
-SCD4x::SCD4x(i2c_inst_t* _i2c_num) : i2c_num(_i2c_num), i2c_address(SCD4X_DEFAULT_ADDR) {}
+SCD4x::SCD4x(i2c_inst_t* _i2c_num) : i2c_num(_i2c_num), i2c_address(SCD4X_DEFAULT_ADDR)
+{
+  _send_command(SCD4X_STARTPERIODICMEASUREMENT);
+}
 
 SCD4x::SCD4x(i2c_inst_t* _i2c_num, uint8_t _i2c_address)
   : i2c_num(_i2c_num), i2c_address(_i2c_address)
 {
+  _send_command(SCD4X_STARTPERIODICMEASUREMENT);
 }
 
 int SCD4x::co2()
 {
-  if(data_ready()) {
-    _read_data();
-  }
   return _co2;
 }
 
 float SCD4x::temperature()
 {
-  if(data_ready()) {
-    _read_data();
-  }
   return _temperature;
 }
 float SCD4x::relative_humidity()
 {
+  return _relative_humidity;
+}
+
+bool SCD4x::update()
+{
   if(data_ready()) {
     _read_data();
+    return true;
   }
-  return _relative_humidity;
+  return false;
 }
 
 int SCD4x::_send_command(const uint8_t* cmd)
@@ -45,6 +49,13 @@ int SCD4x::_send_command(const uint8_t* cmd, uint timeout_us, uint64_t cmd_delay
   int byte_num = 2;
   int i2c_result = i2c_write_timeout_us(i2c_num, i2c_address, cmd, byte_num, false, timeout_us);
   sleep_us(cmd_delay_us);
+  if(i2c_result == PICO_ERROR_GENERIC) {
+    printf("[ERROR] _send_command(), PICO_ERROR_GENERIC, %#x %#x\n", cmd[0], cmd[1]);
+  } else if(i2c_result == PICO_ERROR_TIMEOUT) {
+    printf("[ERROR] _send_command(), PICO_ERROR_TIMEOUT, %#x %#x\n", cmd[0], cmd[1]);
+  } else if(i2c_result != byte_num) {
+    printf("[ERROR] _send_command(), %#x %#x\n", cmd[0], cmd[1]);
+  }
   return i2c_result;
 }
 
@@ -56,25 +67,33 @@ int SCD4x::_read_reply(uint8_t* buf, int byte_num)
 int SCD4x::_read_reply(uint8_t* buf, int byte_num, uint timeout_us)
 {
   int i2c_result = i2c_read_timeout_us(i2c_num, i2c_address, buf, byte_num, false, timeout_us);
+  if(i2c_result == PICO_ERROR_GENERIC) {
+    printf("[ERROR] _read_reply(), PICO_ERROR_GENERIC\n");
+  } else if(i2c_result == PICO_ERROR_TIMEOUT) {
+    printf("[ERROR] _read_reply(), PICO_ERROR_TIMEOUT\n");
+  } else if(i2c_result != byte_num) {
+    printf("[ERROR] _read_reply()\n");
+  }
   return i2c_result;
 }
 
 bool SCD4x::data_ready()
 {
   _send_command(SCD4X_DATAREADY);
-  uint8_t buf[2] = { 0 };
-  _read_reply(buf, 2, 1000);
-  return !((buf[0] & 0x07 == 0) and (buf[1] == 0));
+  uint8_t buf[3] = { 0 };
+  _read_reply(buf, 3, 10000);
+  printf("data_ready(), %#x %#x\n", buf[0], buf[1]);
+  return !((buf[0] & 0x07 == 0) && (buf[1] == 0));
 }
 
 void SCD4x::_read_data()
 {
   uint8_t buf[9] = { 0 };
-  _send_command(SCD4X_READMEASUREMENT, 1000);
-  _read_reply(buf, 9);
-  printf("_read_data(), %x %x %x %x %x %x\n", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+  _send_command(SCD4X_READMEASUREMENT, 10000);
+  _read_reply(buf, 9, 10000);
+  printf("_read_data(), %#x %#x %#x %#x %#x %#x\n", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
   _co2 = ((int)buf[0] << 8) | (int)buf[1];
-  int temp = ((int)buf[3] << 9) | buf[4];
+  int temp = ((int)buf[3] << 9) | (int)buf[4];
   _temperature = -45 + 175 * ((float)temp / 0x10000);
   int humi = ((int)buf[6] << 8) | (int)buf[7];
   _relative_humidity = 100 * ((float)humi / 0x10000);
