@@ -88,15 +88,15 @@ bool SCD4x::data_ready()
 
 void SCD4x::_read_data()
 {
-  uint8_t buf[9] = { 0 };
   _send_command(SCD4X_READMEASUREMENT, 10000);
+  uint8_t buf[9] = { 0 };
   _read_reply(buf, 9, 10000);
   printf("_read_data(), %#x %#x %#x %#x %#x %#x\n", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
   _co2 = ((int)buf[0] << 8) | (int)buf[1];
-  int temp = ((int)buf[3] << 9) | (int)buf[4];
-  _temperature = -45 + 175 * ((float)temp / 0x10000);
+  int temp = ((int)buf[3] << 8) | (int)buf[4];
+  _temperature = -45.0 + 175.0 * ((float)temp / (float)0x10000);
   int humi = ((int)buf[6] << 8) | (int)buf[7];
-  _relative_humidity = 100 * ((float)humi / 0x10000);
+  _relative_humidity = 100.0 * ((float)humi / (float)0x10000);
 }
 
 bool SCD4x::_check_crc(uint8_t* buf)

@@ -18,7 +18,7 @@ int main()
   SCD4x scd4x = SCD4x(i2c_num);
   while(1) {
     if(scd4x.update()) {
-      printf("%d [ppm], %f [C], %f [\%]\n\n", scd4x.co2(), scd4x.temperature(), scd4x.data_ready());
+      printf("%d [ppm], %f [C], %f [%%]\n\n", scd4x.co2(), scd4x.temperature(), scd4x.relative_humidity());
     }
     sleep_ms(5500);
   }
