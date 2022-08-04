@@ -82,8 +82,16 @@ bool SCD4x::data_ready()
   _send_command(SCD4X_DATAREADY);
   uint8_t buf[3] = { 0 };
   _read_reply(buf, 3, 10000);
-  printf("data_ready(), %#x %#x\n", buf[0], buf[1]);
-  return !((buf[0] & 0x07 == 0) && (buf[1] == 0));
+
+  /**
+   * @brief Least significant 11 bits are 0 -> data not ready
+   * buf[0]  Data MSB
+   * buf[1]  Data LSB
+   * buf[2]  CRC
+   */
+  bool is_ready = !(((buf[0] & 0b00000111) == 0) && (buf[1] == 0));
+  printf("data_ready(), %d %#x %#x\n", is_ready, buf[0], buf[1]);
+  return is_ready;
 }
 
 void SCD4x::_read_data()
