@@ -20,6 +20,7 @@ float SCD4x::temperature()
 {
   return _temperature;
 }
+
 float SCD4x::relative_humidity()
 {
   return _relative_humidity;
@@ -46,8 +47,7 @@ int SCD4x::_send_command(const uint8_t* cmd, uint64_t cmd_delay_us)
 
 int SCD4x::_send_command(const uint8_t* cmd, uint timeout_us, uint64_t cmd_delay_us)
 {
-  int byte_num = 2;
-  int i2c_result = i2c_write_timeout_us(i2c_num, i2c_address, cmd, byte_num, false, timeout_us);
+  int i2c_result = i2c_write_timeout_us(i2c_num, i2c_address, cmd, COMMAND_BYTES, false, timeout_us);
   sleep_us(cmd_delay_us);
   return i2c_result;
 }
