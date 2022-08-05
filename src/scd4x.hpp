@@ -56,13 +56,13 @@ class SCD4x {
   float _relative_humidity = -1;
 
   /* Member functions */
+  int _snprint_buf(char *str, uint16_t str_size, uint8_t *buf, uint16_t buf_size);
   int _send_command(const uint8_t* cmd);
   int _send_command(const uint8_t* cmd, uint64_t cmd_delay_us);
   int _send_command(const uint8_t* cmd, uint timeout_us, uint64_t cmd_delay_us);
   int _read_reply(uint8_t* buf, int byte_num, uint timeout_us);
   int _read_reply(uint8_t* buf, int byte_num);
   void _read_data();
-  bool _check_crc(uint8_t* buf);
   uint8_t _generate_crc(const uint8_t* data, uint16_t count);
 };
 #endif

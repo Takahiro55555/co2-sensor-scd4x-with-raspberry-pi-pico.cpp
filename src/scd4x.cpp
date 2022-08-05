@@ -47,7 +47,8 @@ int SCD4x::_send_command(const uint8_t* cmd, uint64_t cmd_delay_us)
 
 int SCD4x::_send_command(const uint8_t* cmd, uint timeout_us, uint64_t cmd_delay_us)
 {
-  int i2c_result = i2c_write_timeout_us(i2c_num, i2c_address, cmd, COMMAND_BYTES, false, timeout_us);
+  int i2c_result
+      = i2c_write_timeout_us(i2c_num, i2c_address, cmd, COMMAND_BYTES, false, timeout_us);
   sleep_us(cmd_delay_us);
   return i2c_result;
 }
@@ -75,25 +76,88 @@ bool SCD4x::data_ready()
    * buf[1]  Data LSB
    * buf[2]  CRC
    */
+  uint8_t crc_actual = _generate_crc(buf, 2);
+  uint8_t crc_expected = buf[2];
+  if(crc_actual != crc_expected) {
+    char str[128] = { 0 };
+    _snprint_buf(str, 128, buf, 3);
+    printf("[ERROR] CRC error, expected: %#x, actual: %#x, buf: %s\n", crc_expected, crc_actual,
+           str);
+    return false;
+  }
   return !(((buf[0] & 0b00000111) == 0) && (buf[1] == 0));
+}
+
+int SCD4x::_snprint_buf(char* str, uint16_t str_size, uint8_t* buf, uint16_t buf_size)
+{
+  int padding = 0;
+  padding += snprintf(str + padding, str_size - padding, "[");
+  for(int i = 0; i < buf_size; i++) {
+    padding += snprintf(str + padding, str_size - padding, "%#x", buf[i]);
+    if(i != buf_size - 1) {
+      padding += snprintf(str + padding, str_size - padding, ", ");
+    } else {
+      padding += snprintf(str + padding, str_size - padding, "]");
+    }
+  }
+  return padding;
 }
 
 void SCD4x::_read_data()
 {
   _send_command(SCD4X_READMEASUREMENT, 10000);
   uint8_t buf[9] = { 0 };
-  _read_reply(buf, 9, 10000);
-  _co2 = (int)buf[0] << 8 | (int)buf[1];
-  int temp = (int)buf[3] << 8 | (int)buf[4];
-  _temperature = -45.0 + 175.0 * (float)temp / (float)0x10000;
-  int humi = (int)buf[6] << 8 | (int)buf[7];
-  _relative_humidity = 100.0 * (float)humi / (float)0x10000;
-}
+  int i2c_result = _read_reply(buf, 9, 10000);
+  bool is_error = false;
+  if(i2c_result == PICO_ERROR_GENERIC) {
+    char str[128] = { 0 };
+    int write_num = _snprint_buf(str, 128, buf, 9);
+    str[write_num] = '\0';
+    printf("[ERROR] PICO_ERROR_GENERIC, %s\n", str);
+  } else if(i2c_result == PICO_ERROR_TIMEOUT) {
+    char str[128] = { 0 };
+    int write_num = _snprint_buf(str, 128, buf, 9);
+    str[write_num] = '\0';
+    printf("[ERROR] PICO_ERROR_TIMEOUT, %s\n", str);
+  }
 
-bool SCD4x::_check_crc(uint8_t* buf)
-{
-  /* ToDo: 未実装 */
-  return true;
+  uint8_t crc_actual = _generate_crc(buf, 2);
+  uint8_t crc_expected = buf[2];
+  if(crc_actual == crc_expected) {
+    _co2 = (int)buf[0] << 8 | (int)buf[1];
+  } else {
+    char str[128] = { 0 };
+    int write_num = _snprint_buf(str, 128, buf, 9);
+    str[write_num] = '\0';
+    printf("[ERROR] CRC error, expected: %#x, actual: %#x, buf: %s\n", crc_expected, crc_actual,
+           str);
+  }
+
+  crc_actual = _generate_crc(buf + 3, 2);
+  crc_expected = buf[5];
+  if(crc_actual == crc_expected) {
+    int temp = (int)buf[3] << 8 | (int)buf[4];
+    _temperature = -45.0 + 175.0 * (float)temp / (float)0x10000;
+  } else {
+    char str[128] = { 0 };
+    int write_num = _snprint_buf(str, 128, buf, 9);
+    str[write_num] = '\0';
+    printf("[ERROR] CRC error, expected: %#x, actual: %#x, buf: %s\n", crc_expected, crc_actual,
+           str);
+  }
+
+  crc_actual = _generate_crc(buf + 6, 2);
+  crc_expected = buf[8];
+  if(crc_actual == crc_expected) {
+    int humi = (int)buf[6] << 8 | (int)buf[7];
+    _relative_humidity = 100.0 * (float)humi / (float)0x10000;
+  } else {
+    char str[128] = { 0 };
+    int write_num = _snprint_buf(str, 128, buf, 9);
+    str[write_num] = '\0';
+    printf("[ERROR] CRC error, expected: %#x, actual: %#x, buf: %s\n", crc_expected, crc_actual,
+           str);
+  }
 }
 
 uint8_t SCD4x::_generate_crc(const uint8_t* data, uint16_t count)
